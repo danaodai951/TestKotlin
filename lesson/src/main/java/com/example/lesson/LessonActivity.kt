@@ -11,19 +11,20 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
 import com.example.core.BaseView
+import com.example.core.utils.CacheUtils
 import com.example.lesson.entity.Lesson
+import kotlin.reflect.KProperty
 
 class LessonActivity : AppCompatActivity(), BaseView<LessonPresenter?>,
     Toolbar.OnMenuItemClickListener {
 
-    private val lessonPresenter = LessonPresenter(this)
-
-    override fun getPresenter(): LessonPresenter {
-        return lessonPresenter
+    override val presenter: LessonPresenter by lazy {
+        LessonPresenter(this)
     }
 
     private val lessonAdapter = LessonAdapter()
     lateinit var refreshLayout: SwipeRefreshLayout
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -32,14 +33,18 @@ class LessonActivity : AppCompatActivity(), BaseView<LessonPresenter?>,
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         toolbar.inflateMenu(R.menu.menu_lesson)
         toolbar.setOnMenuItemClickListener(this)
-        val recyclerView = findViewById<RecyclerView>(R.id.list)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = lessonAdapter
-        recyclerView.addItemDecoration(DividerItemDecoration(this, LinearLayout.VERTICAL))
-        refreshLayout = findViewById(R.id.swipe_refresh_layout)
-        refreshLayout.setOnRefreshListener(OnRefreshListener { getPresenter().fetchData() })
-        refreshLayout.isRefreshing = true
-        getPresenter().fetchData()
+        findViewById<RecyclerView>(R.id.list).run {
+            layoutManager = LinearLayoutManager(this@LessonActivity)
+            adapter = lessonAdapter
+            addItemDecoration(DividerItemDecoration(this@LessonActivity, LinearLayout.VERTICAL))
+        }
+        refreshLayout = findViewById<SwipeRefreshLayout>(R.id.swipe_refresh_layout)
+        refreshLayout.run {
+            setOnRefreshListener { presenter.fetchData() }
+            isRefreshing = true
+        }
+
+        presenter.fetchData()
     }
 
     fun showResult(lessons: List<Lesson>) {
@@ -48,7 +53,7 @@ class LessonActivity : AppCompatActivity(), BaseView<LessonPresenter?>,
     }
 
     override fun onMenuItemClick(item: MenuItem): Boolean {
-        getPresenter().showPlayback()
+        presenter.showPlayback()
         return false
     }
 }
